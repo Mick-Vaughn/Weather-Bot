@@ -1,4 +1,5 @@
 """Kalshi weather temperature market fetcher."""
+import httpx
 import logging
 import re
 from datetime import date, datetime
@@ -125,26 +126,32 @@ async def fetch_kalshi_weather_markets(
 
     cities = city_keys or list(CITY_SERIES.keys())
 
-    for city_key in cities:
-        series = CITY_SERIES.get(city_key)
-        if not series:
-            continue
+    async with httpx.AsyncClient(timeout=20) as http_client:
+        for city_key in cities:
+            series = CITY_SERIES.get(city_key)
+            if not series:
+                continue
 
-        city_name = CITY_NAMES.get(city_key, city_key)
-        cursor = None
+            city_name = CITY_NAMES.get(city_key, city_key)
+            cursor = None
 
-        try:
-            while True:
-                params = {
-                    "series_ticker": series,
-                    "status": "open",
-                    "limit": 200,
-                }
-                if cursor:
-                    params["cursor"] = cursor
+            try:
+                while True:
+                    params = {
+                        "series_ticker": series,
+                        "status": "open",
+                        "limit": 200,
+                    }
+                    if cursor:
+                        params["cursor"] = cursor
 
-                data = await client.get_markets(params)
-                raw_markets = data.get("markets", [])
+                    response = await http_client.get(
+                        "https://api.elections.kalshi.com/trade-api/v2/markets",
+                        params=params,
+                    )
+                    response.raise_for_status()
+                    data = response.json()
+                    raw_markets = data.get("markets", [])
 
                 for m in raw_markets:
                     ticker = m.get("ticker", "")

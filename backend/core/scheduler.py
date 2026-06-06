@@ -400,31 +400,31 @@ def start_scheduler():
     settle_seconds = settings.SETTLEMENT_INTERVAL_SECONDS
 
     # Scan BTC markets every minute
-    scheduler.add_job(
-        scan_and_trade_job,
-        IntervalTrigger(seconds=scan_seconds),
-        id="market_scan",
-        replace_existing=True,
-        max_instances=1
-    )
+   # scheduler.add_job(
+   #     scan_and_trade_job,
+   #     IntervalTrigger(seconds=scan_seconds),
+   #     id="market_scan",
+   #     replace_existing=True,
+   #     max_instances=1
+   # )
 
     # Check settlements every 2 minutes
-    scheduler.add_job(
-        settlement_job,
-        IntervalTrigger(seconds=settle_seconds),
-        id="settlement_check",
-        replace_existing=True,
-        max_instances=1
-    )
+   # scheduler.add_job(
+   #     settlement_job,
+   #     IntervalTrigger(seconds=settle_seconds),
+   #     id="settlement_check",
+   #     replace_existing=True,
+   #     max_instances=1
+   # )
 
     # Heartbeat every minute
-    scheduler.add_job(
-        heartbeat_job,
-        IntervalTrigger(minutes=1),
-        id="heartbeat",
-        replace_existing=True,
-        max_instances=1
-    )
+   # scheduler.add_job(
+   #     heartbeat_job,
+   #     IntervalTrigger(minutes=1),
+   #     id="heartbeat",
+   #     replace_existing=True,
+   #     max_instances=1
+   # )
 
     # Weather trading jobs (gated by WEATHER_ENABLED)
     if settings.WEATHER_ENABLED:
@@ -447,7 +447,7 @@ def start_scheduler():
         "weather_enabled": settings.WEATHER_ENABLED,
     })
 
-    asyncio.create_task(scan_and_trade_job())
+#    asyncio.create_task(scan_and_trade_job())
 
     if settings.WEATHER_ENABLED:
         asyncio.create_task(weather_scan_and_trade_job())

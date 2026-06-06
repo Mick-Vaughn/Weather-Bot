@@ -76,6 +76,7 @@ class Settings(BaseSettings):
     # Optional API keys
     fred_api_key: str = ""
     bls_api_key: str = ""
+    vite_mapbox_token: str = ""
 
     class Config:
         env_file = ".env"

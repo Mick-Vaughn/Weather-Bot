@@ -198,8 +198,8 @@ async def fetch_kalshi_weather_markets(
                 if not cursor or not raw_markets:
                     break
 
-        except Exception as e:
-            logger.warning(f"Failed to fetch Kalshi markets for {city_key} ({series}): {e}")
+            except Exception as e:
+                logger.warning(f"Failed to fetch Kalshi markets for {city_key} ({series}): {e}")
 
     logger.info(f"Found {len(markets)} Kalshi weather markets")
     return markets

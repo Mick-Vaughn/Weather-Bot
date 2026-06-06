@@ -51,6 +51,78 @@ CITY_CONFIG: Dict[str, dict] = {
         "nws_office": "BOU",
         "nws_gridpoint": "BOU/62,60",
     },
+    "austin": {
+        "name": "Austin",
+        "lat": 30.2672,
+        "lon": -97.7431,
+        "nws_station": "KAUS",
+    },
+    "phoenix": {
+        "name": "Phoenix",
+        "lat": 33.4484,
+        "lon": -112.0740,
+        "nws_station": "KPHX",
+    },
+    "san_francisco": {
+        "name": "San Francisco",
+        "lat": 37.7749,
+        "lon": -122.4194,
+        "nws_station": "KSFO",
+    },
+    "atlanta": {
+        "name": "Atlanta",
+        "lat": 33.7490,
+        "lon": -84.3880,
+        "nws_station": "KATL",
+    },
+    "philadelphia": {
+        "name": "Philadelphia",
+        "lat": 39.9526,
+        "lon": -75.1652,
+        "nws_station": "KPHL",
+    },
+    "boston": {
+        "name": "Boston",
+        "lat": 42.3601,
+        "lon": -71.0589,
+        "nws_station": "KBOS",
+    },
+    "seattle": {
+        "name": "Seattle",
+        "lat": 47.6062,
+        "lon": -122.3321,
+        "nws_station": "KSEA",
+    },
+    "houston": {
+        "name": "Houston",
+        "lat": 29.7604,
+        "lon": -95.3698,
+        "nws_station": "KIAH",
+    },
+    "washington_dc": {
+        "name": "Washington DC",
+        "lat": 38.9072,
+        "lon": -77.0369,
+        "nws_station": "KDCA",
+    },
+    "oklahoma_city": {
+        "name": "Oklahoma City",
+        "lat": 35.4676,
+        "lon": -97.5164,
+        "nws_station": "KOKC",
+    },
+    "las_vegas": {
+        "name": "Las Vegas",
+        "lat": 36.1699,
+        "lon": -115.1398,
+        "nws_station": "KLAS",
+    },
+    "dallas": {
+        "name": "Dallas",
+        "lat": 32.7767,
+        "lon": -96.7970,
+        "nws_station": "KDFW",
+    },
 }
 
 

@@ -200,13 +200,8 @@ async def fetch_kalshi_weather_markets(
                         volume=volume,
                     ))
 
-                # Handle pagination
-                next_cursor = data.get("cursor")
-
-                if not next_cursor or next_cursor == cursor or not raw_markets:
-                    break   
-
-                cursor = next_cursor
+                # Stop after first page to prevent hanging
+                break   
 
             except Exception as e:
                 logger.warning(f"Failed to fetch Kalshi markets for {city_key} ({series}): {e}")

@@ -191,7 +191,7 @@ async def weather_scan_and_trade_job():
     """
     log_event("info", "Scanning weather temperature markets...")
     from backend.core.discord_alerts import send_test_alert
-    await send_test_alert("✅ Weather bot is running on Railway.")
+    await send_test_alert("✅ Weather bot is alive.")
     
     try:
         from backend.core.weather_signals import scan_for_weather_signals

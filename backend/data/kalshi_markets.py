@@ -128,7 +128,7 @@ async def fetch_kalshi_weather_markets(
 
     cities = city_keys or list(CITY_SERIES.keys())
 
-    async with httpx.AsyncClient(timeout=20) as http_client:
+    async with httpx.AsyncClient(timeout=8.0) as http_client:
         for city_key in cities:
             series = CITY_SERIES.get(city_key)
             if not series:

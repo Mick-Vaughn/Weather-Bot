@@ -123,6 +123,26 @@ CITY_CONFIG: Dict[str, dict] = {
         "lon": -96.7970,
         "nws_station": "KDFW",
     },
+    "san_antonio": {
+        "name": "San Antonio",
+        "lat": 29.4241,
+        "lon": -98.4936,
+        "nws_station": "KSAT",
+    },
+
+    "new_orleans": {
+        "name": "New Orleans",
+        "lat": 29.9511,
+        "lon": -90.0715,
+        "nws_station": "KMSY",
+    },
+
+    "minneapolis": {
+        "name": "Minneapolis",
+        "lat": 44.9778,
+        "lon": -93.2650,
+        "nws_station": "KMSP",
+    },
 }
 
 

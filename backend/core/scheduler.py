@@ -53,6 +53,7 @@ def get_recent_events(limit: int = 50) -> List[dict]:
 
 
 async def scan_and_trade_job():
+    return
     """
     Background job: Scan BTC 5-min markets, generate signals, execute trades.
     Runs every minute.

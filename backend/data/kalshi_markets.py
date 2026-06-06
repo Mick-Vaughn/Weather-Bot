@@ -28,6 +28,9 @@ CITY_SERIES: Dict[str, str] = {
     "oklahoma_city": "KXHIGHTOKC",
     "las_vegas": "KXHIGHTLV",
     "dallas": "KXHIGHTDAL",
+    "san_antonio": "KXHIGHSAT",
+    "new_orleans": "KXHIGHMSY",
+    "minneapolis": "KXHIGHMSP",
 }
 
 CITY_NAMES: Dict[str, str] = {
@@ -48,6 +51,9 @@ CITY_NAMES: Dict[str, str] = {
     "oklahoma_city": "Oklahoma City",
     "las_vegas": "Las Vegas",
     "dallas": "Dallas",
+    "san_antonio": "San Antonio",
+    "new_orleans": "New Orleans",
+    "minneapolis": "Minneapolis",
 }
 
 # Month abbreviation mapping for ticker parsing

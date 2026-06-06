@@ -10,6 +10,8 @@ from backend.data.weather_markets import WeatherMarket
 
 logger = logging.getLogger("trading_bot")
 
+logging.getLogger("httpx").setLevel(logging.WARNING)
+
 # Kalshi series tickers for high-temperature markets by city
 CITY_SERIES: Dict[str, str] = {
     "nyc": "KXHIGHNY",
@@ -63,7 +65,6 @@ MONTH_ABBR = {
     "JUL": 7, "AUG": 8, "SEP": 9, "OCT": 10, "NOV": 11, "DEC": 12,
 }
 
-logging.getLogger("httpx").setLevel(logging.WARNING)
 
 def _parse_kalshi_ticker(ticker: str, city_key: str) -> Optional[dict]:
     """

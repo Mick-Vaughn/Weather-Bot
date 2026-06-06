@@ -10,17 +10,17 @@ def _pct(x: float) -> str:
 
 
 async def send_weather_edge_alerts(signals):
-    if not settings.DISCORD_WEBHOOK_URL:
+    if not settings.discord_webhook_url:
         return
 
     actionable = [
         s for s in signals
         if s.market.platform == "kalshi"
-        and abs(s.edge) >= settings.DISCORD_MIN_EDGE
+        and abs(s.edge) >= settings.discord_min_edge
     ]
 
     actionable.sort(key=lambda s: abs(s.edge), reverse=True)
-    top = actionable[: settings.DISCORD_TOP_N]
+    top = actionable[: settings.discord_top_n]
 
     if not top:
         return
@@ -55,5 +55,5 @@ async def send_weather_edge_alerts(signals):
     }
 
     async with httpx.AsyncClient(timeout=15) as client:
-        response = await client.post(settings.DISCORD_WEBHOOK_URL, json=payload)
+        response = await client.post(settings.discord_webhook_url, json=payload)
         response.raise_for_status()

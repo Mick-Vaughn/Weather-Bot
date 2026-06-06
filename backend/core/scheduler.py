@@ -196,6 +196,22 @@ async def weather_scan_and_trade_job():
         signals = await scan_for_weather_signals()
         actionable = [s for s in signals if s.passes_threshold]
 
+        from backend.core.discord_alerts import send_weather_edge_alerts
+
+        await send_weather_edge_alerts(signals)
+
+        log_event(
+            "success",
+            "Sent Discord weather alerts for top Kalshi edges",
+            {
+                "total_signals": len(signals),
+                "actionable": len(actionable),
+            },
+        )
+
+        return
+        # existing weather trading code remains below, but will never execute
+        
         log_event("data", f"Weather: {len(signals)} signals, {len(actionable)} actionable", {
             "total_signals": len(signals),
             "actionable": len(actionable),

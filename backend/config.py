@@ -65,7 +65,17 @@ class Settings(BaseSettings):
     WEATHER_MIN_EDGE_THRESHOLD: float = 0.08  # 8% — weather has more signal than 5-min BTC
     WEATHER_MAX_ENTRY_PRICE: float = 0.70
     WEATHER_MAX_TRADE_SIZE: float = 100.0
-    WEATHER_CITIES: str = "nyc,chicago,miami,los_angeles,denver"
+    WEATHER_CITIES: str = "nyc,chicago,miami,austin,phoenix,los_angeles,san_francisco,atlanta,denver,philadelphia,boston,seattle,houston,washington_dc,oklahoma_city,las_vegas,dallas,san_antonio,new_orleans,minneapolis"
+    
+    # Discord alerts
+    discord_webhook_url: str = ""
+    discord_top_n: int = 5
+    discord_min_edge: float = 0.08
+    alert_only_mode: bool = True
+
+    # Optional API keys
+    fred_api_key: str = ""
+    bls_api_key: str = ""
 
     class Config:
         env_file = ".env"

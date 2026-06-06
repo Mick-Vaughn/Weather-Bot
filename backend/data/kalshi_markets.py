@@ -147,13 +147,18 @@ async def fetch_kalshi_weather_markets(
                     if cursor:
                         params["cursor"] = cursor
 
-                    response = await http_client.get(
-                        "https://api.elections.kalshi.com/trade-api/v2/markets",
-                        params=params,
-                    )
-                    response.raise_for_status()
-                    data = response.json()
-                    raw_markets = data.get("markets", [])
+                    try:
+                        async with httpx.AsyncClient(timeout=httpx.Timeout(5.0)) as temp_client:
+                            response = await temp_client.get(
+                                "https://api.elections.kalshi.com/trade-api/v2/markets",
+                                    params=params,
+                            )
+                            response.raise_for_status()
+                            data = response.json()
+                            raw_markets = data.get("markets", [])
+                    except Exception as e:
+                        logger.warning(f"Kalshi request failed for {city_key} ({series}): {e}")
+                        break
 
                 for m in raw_markets:
                     ticker = m.get("ticker", "")

@@ -190,7 +190,9 @@ async def weather_scan_and_trade_job():
     Runs every 5 minutes when WEATHER_ENABLED.
     """
     log_event("info", "Scanning weather temperature markets...")
-
+    from backend.core.discord_alerts import send_test_alert
+    await send_test_alert("✅ Weather bot is running on Railway.")
+    
     try:
         from backend.core.weather_signals import scan_for_weather_signals
 

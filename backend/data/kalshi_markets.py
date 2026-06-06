@@ -14,16 +14,40 @@ CITY_SERIES: Dict[str, str] = {
     "nyc": "KXHIGHNY",
     "chicago": "KXHIGHCHI",
     "miami": "KXHIGHMIA",
+    "austin": "KXHIGHAUS",
+    "phoenix": "KXHIGHTPHX",
     "los_angeles": "KXHIGHLAX",
+    "san_francisco": "KXHIGHTSFO",
+    "atlanta": "KXHIGHTATL",
     "denver": "KXHIGHDEN",
+    "philadelphia": "KXHIGHPHIL",
+    "boston": "KXHIGHTBOS",
+    "seattle": "KXHIGHTSEA",
+    "houston": "KXHIGHTHOU",
+    "washington_dc": "KXHIGHTDC",
+    "oklahoma_city": "KXHIGHTOKC",
+    "las_vegas": "KXHIGHTLV",
+    "dallas": "KXHIGHTDAL",
 }
 
 CITY_NAMES: Dict[str, str] = {
-    "nyc": "New York",
+    "nyc": "New York City",
     "chicago": "Chicago",
     "miami": "Miami",
+    "austin": "Austin",
+    "phoenix": "Phoenix",
     "los_angeles": "Los Angeles",
+    "san_francisco": "San Francisco",
+    "atlanta": "Atlanta",
     "denver": "Denver",
+    "philadelphia": "Philadelphia",
+    "boston": "Boston",
+    "seattle": "Seattle",
+    "houston": "Houston",
+    "washington_dc": "Washington DC",
+    "oklahoma_city": "Oklahoma City",
+    "las_vegas": "Las Vegas",
+    "dallas": "Dallas",
 }
 
 # Month abbreviation mapping for ticker parsing
@@ -86,8 +110,8 @@ async def fetch_kalshi_weather_markets(
     Queries the KXHIGH{city} series for each configured city,
     handles cursor-based pagination, and returns WeatherMarket objects.
     """
-    if not kalshi_credentials_present():
-        return []
+    #if not kalshi_credentials_present():
+    #    return []
 
     client = KalshiClient()
     markets: List[WeatherMarket] = []

@@ -63,6 +63,7 @@ MONTH_ABBR = {
     "JUL": 7, "AUG": 8, "SEP": 9, "OCT": 10, "NOV": 11, "DEC": 12,
 }
 
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 def _parse_kalshi_ticker(ticker: str, city_key: str) -> Optional[dict]:
     """
@@ -194,9 +195,12 @@ async def fetch_kalshi_weather_markets(
                     ))
 
                 # Handle pagination
-                cursor = data.get("cursor")
-                if not cursor or not raw_markets:
-                    break
+                next_cursor = data.get("cursor")
+
+                if not next_cursor or next_cursor == cursor or not raw_markets:
+                    break   
+
+                cursor = next_cursor
 
             except Exception as e:
                 logger.warning(f"Failed to fetch Kalshi markets for {city_key} ({series}): {e}")

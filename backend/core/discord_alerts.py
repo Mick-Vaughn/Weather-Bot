@@ -4,6 +4,18 @@ import httpx
 from datetime import datetime, timezone
 from backend.config import settings
 
+async def send_test_alert(message: str):
+    if not settings.discord_webhook_url:
+        print("No Discord webhook configured")
+        return
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            settings.discord_webhook_url,
+            json={"content": message},
+        )
+
+        print(f"Discord test alert status: {response.status_code}")
 
 def _pct(x: float) -> str:
     return f"{x:.1%}"

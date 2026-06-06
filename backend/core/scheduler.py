@@ -194,7 +194,7 @@ async def weather_scan_and_trade_job():
     try:
         from backend.core.weather_signals import scan_for_weather_signals
 
-        signals = await scan_for_weather_signals()
+        signals = await asyncio.wait_for(scan_for_weather_signals(), timeout=120)
         actionable = [s for s in signals if s.passes_threshold]
 
         from backend.core.discord_alerts import send_weather_edge_alerts

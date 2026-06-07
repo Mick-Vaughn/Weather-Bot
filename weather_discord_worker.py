@@ -542,7 +542,9 @@ async def send_discord_alert(opportunities: List[Dict]) -> None:
     async with httpx.AsyncClient(timeout=10) as client:
         r = await client.post(DISCORD_WEBHOOK_URL, json=payload)
         logger.info("Discord status: %s", r.status_code)
-
+        
+        if r.status_code != 204:
+            logger.error("Discord response: %s", r.text)
 
 async def scan_once() -> None:
     cities = selected_cities()
@@ -618,7 +620,7 @@ async def scan_once() -> None:
 
                     opportunities.append(opp)
                     
-                await asyncio.sleep(1.5)
+                await asyncio.sleep(3)
 
     logger.info("Found %s opportunities", len(opportunities))
     await send_discord_alert(opportunities)

@@ -330,8 +330,9 @@ def evaluate_market(city_key: str, market: Dict, forecast_high: float, prices: D
         threshold_display = f"{display_high:.0f}°F or below"
 
     elif bucket["type"] == "above":
-        model_yes = 1 - cdf(bucket["low"] - 0.5)
-        threshold_display = f"{bucket['low']:.0f}°F or above"
+        display_low = bucket["low"] + 1
+        model_yes = 1 - cdf(bucket["low"] + 0.5)
+        threshold_display = f"{display_low:.0f}°F or above"
 
     else:
         low = bucket["low"]

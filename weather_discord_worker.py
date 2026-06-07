@@ -18,8 +18,8 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL", "")
 WEATHER_CITIES = os.getenv("WEATHER_CITIES", "nyc")
 DISCORD_TOP_N = int(os.getenv("DISCORD_TOP_N", "5"))
-DISCORD_MIN_EDGE = float(os.getenv("DISCORD_MIN_EDGE", "0.00"))
-CHECK_INTERVAL_SECONDS = int(os.getenv("CHECK_INTERVAL_SECONDS", "300"))
+DISCORD_MIN_EDGE = float(os.getenv("DISCORD_MIN_EDGE", "0.03"))
+CHECK_INTERVAL_SECONDS = int(os.getenv("CHECK_INTERVAL_SECONDS", "900"))
 
 KALSHI_URL = "https://api.elections.kalshi.com/trade-api/v2/markets"
 

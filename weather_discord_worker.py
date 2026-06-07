@@ -564,6 +564,16 @@ async def send_discord_alert(opportunities: List[Dict]) -> None:
 
         if o.get("kalshi_forecast") is not None:
             kalshi_text = f"**Kalshi Forecast:** {o['kalshi_forecast']:.1f}°F\n"
+            
+        source_text = ""
+
+        if o.get("nws_high") is not None:
+            source_text += f"**NWS:** {o['nws_high']:.1f}°F\n"
+
+        if o.get("openmeteo_high") is not None:
+            source_text += f"**Open-Meteo:** {o['openmeteo_high']:.1f}°F\n"
+
+        
         
         fields.append({
             "name": title,
@@ -574,8 +584,7 @@ async def send_discord_alert(opportunities: List[Dict]) -> None:
                 f"**Model:** {o['model_yes']:.1%}\n"
                 f"**Market YES:** {o['market_yes']:.1%}\n"
                 f"**Forecast:** {o['forecast_high']:.1f}°F\n"
-                f"**NWS:** {o['nws_high']:.1f}°F\n"
-                f"**Open-Meteo:** {o['openmeteo_high']:.1f}°F\n"
+                f"{source_text}"
                 f"{kalshi_text}"
                 f"{warning_text}"
                 f"**Ticker:** {o['ticker']}"

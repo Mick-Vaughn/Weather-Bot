@@ -113,7 +113,11 @@ def normal_cdf(x: float) -> float:
 
 def parse_temp_bucket(title: str):
     text = title.lower()
-    nums = [int(x) for x in re.findall(r"\d{2,3}", text)]
+
+    # Only parse the part before "on Jun..." so dates don't get picked up
+    text = text.split(" on ")[0]
+
+    nums = [float(x) for x in re.findall(r"\d{2,3}(?:\.\d+)?", text)]
 
     if not nums:
         return None
@@ -121,11 +125,11 @@ def parse_temp_bucket(title: str):
     if "below" in text or "or less" in text or "under" in text:
         return {"type": "below", "low": None, "high": nums[0]}
 
-    if "above" in text or "or higher" in text or "over" in text:
+    if "above" in text or "or higher" in text or "over" in text or ">" in text:
         return {"type": "above", "low": nums[0], "high": None}
 
     if len(nums) >= 2:
-        return {"type": "range", "low": nums[0], "high": nums[1]}
+        return {"type": "range", "low": min(nums[0], nums[1]), "high": max(nums[0], nums[1])}
 
     return {"type": "above", "low": nums[0], "high": None}
 
@@ -188,7 +192,8 @@ def evaluate_market(city_key: str, market: Dict, forecast_high: float) -> Option
     bucket = parse_temp_bucket(title)
     if bucket is None:
         return None
-
+    
+    logger.info(f"DEBUG BUCKET: {title} -> {bucket}")
 # Skip markets where the threshold is too far from the forecast
 #    if abs(threshold - forecast_high) > 8:
 #        return None

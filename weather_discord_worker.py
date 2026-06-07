@@ -172,6 +172,15 @@ def evaluate_market(city_key: str, market: Dict, forecast_high: float) -> Option
     if threshold is None:
         return None
 
+# Skip markets where the threshold is too far from the forecast
+    if abs(threshold - forecast_high) > 8:
+        return None
+
+# Skip low-volume / dead markets
+    volume = float(market.get("volume", 0) or 0)
+    if volume < 100:
+        return None
+
     yes_ask = market.get("yes_ask")
     no_ask = market.get("no_ask")
 

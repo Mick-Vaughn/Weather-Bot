@@ -469,6 +469,7 @@ def start_scheduler():
 #    asyncio.create_task(scan_and_trade_job())
 
     if settings.WEATHER_ENABLED:
+        pass
     #    asyncio.create_task(weather_scan_and_trade_job())
 
 

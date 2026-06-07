@@ -170,25 +170,44 @@ async def fetch_forecast_high(client: httpx.AsyncClient, city_key: str) -> Optio
 
     lat, lon = coords
 
-    url = "https://api.open-meteo.com/v1/forecast"
-    params = {
-        "latitude": lat,
-        "longitude": lon,
-        "hourly": "temperature_2m",
-        "temperature_unit": "fahrenheit",
-        "forecast_days": 1,
-    }
-
     try:
-        r = await client.get(url, params=params)
+        # Step 1: Convert lat/lon to NWS gridpoint
+        points_url = f"https://api.weather.gov/points/{lat},{lon}"
+        r = await client.get(
+            points_url,
+            headers={"User-Agent": "kalshi-weather-bot"},
+        )
         r.raise_for_status()
-        data = r.json()
-        temps = data.get("hourly", {}).get("temperature_2m", [])
+        point_data = r.json()
+
+        hourly_url = point_data["properties"]["forecastHourly"]
+
+        # Step 2: Fetch NWS hourly forecast
+        r = await client.get(
+            hourly_url,
+            headers={"User-Agent": "kalshi-weather-bot"},
+        )
+        r.raise_for_status()
+        forecast_data = r.json()
+
+        periods = forecast_data.get("properties", {}).get("periods", [])
+        temps = [
+            float(p["temperature"])
+            for p in periods[:24]
+            if p.get("temperature") is not None
+        ]
+
         if not temps:
             return None
-        return max(float(t) for t in temps)
+            
+        forecast_high = max(temps)
+
+        logger.info("%s NWS forecast high: %.1f°F", city_key, forecast_high)
+
+        return forecast_high
+
     except Exception as e:
-        logger.warning("Forecast request failed for %s: %s", city_key, e)
+        logger.warning("NWS forecast request failed for %s: %s", city_key, e)
         return None
 
 async def fetch_orderbook_prices(client: httpx.AsyncClient, ticker: str):

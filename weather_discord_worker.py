@@ -495,27 +495,36 @@ async def send_discord_alert(opportunities: List[Dict]) -> None:
             
         alert_prefix = "⚠️ " if o.get("forecast_warning") else ""
         
+        title = f"{alert_prefix}{o['city']} — {o['title']}"
+
         fields.append({
-            "name": f"#{i} {alert_prefix}{o['city']} — BUY {o['side']}",
-            "value": (
-                f"{o['title']}"
-                f"**Edge:** {o['edge']:+.1%}\n"
-                f"**Entry:** {o['price']:.1%}\n"
-                f"**Market YES:** {o['market_yes']:.1%}\n"
-                f"**Model YES:** {o['model_yes']:.1%}\n"
-                f"**Forecast High:** {o['forecast_high']:.1f}°F\n"
-                f"{warning_text}"
-                f"**Threshold:** {o['threshold']}°F\n"
-                f"**Ticker:** `{o['ticker']}`\n"
-            ),
+            "name": title,
+            "value": "",
             "inline": False,
         })
+
+        fields.extend([
+            {"name": "Side", "value": o["side"], "inline": True},
+            {"name": "EV%", "value": f"{o['edge']:+.1%}", "inline": True},
+            {"name": "Entry", "value": f"{o['price']:.1%}", "inline": True},
+
+            {"name": "Model prob", "value": f"{o['model_yes']:.1%}", "inline": True},
+            {"name": "Kalshi Implied", "value": f"{o['market_yes']:.1%}", "inline": True},
+            {"name": "Forecast High", "value": f"{o['forecast_high']:.1f}°F", "inline": True},
+
+            {"name": "NWS", "value": f"{o.get('nws_high', 0):.1f}°F", "inline": True},
+            {"name": "Open-Meteo", "value": f"{o.get('openmeteo_high', 0):.1f}°F", "inline": True},
+            {"name": "Spread", "value": f"{o.get('forecast_spread', 0):.1f}°F", "inline": True},
+
+            {"name": "Ticker", "value": f"`{o['ticker']}`", "inline": False},
+        ])
 
     payload = {
         "username": "Kalshi Weather Scanner",
         "embeds": [{
             "title": f"Top {len(top)} Kalshi Weather Edges",
             "description": "Alert-only mode. No trades placed.",
+            "color": 5763719,
             "fields": fields,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }],

@@ -289,10 +289,11 @@ async def fetch_kalshi_forecast(
     event_ticker: str,
 ) -> Optional[float]:
     try:
+        series_ticker = event_ticker.split("-")[0]
         now = int(time.time())
 
         r = await client.get(
-            f"https://api.elections.kalshi.com/v1/events/{event_ticker}/forecast_history",
+            f"https://api.elections.kalshi.com/v1/series/{series_ticker}/events/{event_ticker}/forecast_history",
             params={
                 "start_ts": now - 3600,
                 "end_ts": now,
@@ -303,7 +304,12 @@ async def fetch_kalshi_forecast(
         r.raise_for_status()
         data = r.json()
 
-        points = data.get("forecast_history", []) or data.get("history", []) or data.get("data", [])
+        points = (
+            data.get("forecast_history")
+            or data.get("history")
+            or data.get("data")
+            or []
+        )
 
         forecasts = [
             p.get("raw_numerical_forecast")

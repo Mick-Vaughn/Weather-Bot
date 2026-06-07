@@ -122,10 +122,20 @@ def parse_temp_bucket(title: str):
     if not nums:
         return None
 
-    if "below" in text or "or less" in text or "under" in text:
+    if (
+        "below" in text
+        or "or less" in text
+        or "under" in text
+        or "<" in text
+    ):
         return {"type": "below", "low": None, "high": nums[0]}
 
-    if "above" in text or "or higher" in text or "over" in text or ">" in text:
+     if (
+        "above" in text
+        or "or higher" in text
+        or "over" in text
+        or ">" in text
+    ):
         return {"type": "above", "low": nums[0], "high": None}
 
     if len(nums) >= 2:

@@ -295,7 +295,7 @@ async def fetch_kalshi_forecast(
         r = await client.get(
             f"https://api.elections.kalshi.com/v1/series/{series_ticker}/events/{event_ticker}/forecast_history",
             params={
-                "start_ts": now - 3600,
+                "start_ts": now - 24 * 3600,
                 "end_ts": now,
                 "period_interval": 1,
             },

@@ -621,6 +621,7 @@ async def scan_once() -> None:
     logger.info("Scanning cities: %s", ",".join(cities))
 
     opportunities = []
+    forecast_cache = {}
 
     timeout = httpx.Timeout(10.0, connect=5.0)
 
@@ -638,23 +639,22 @@ async def scan_once() -> None:
                     logger.warning("Could not parse date from ticker %s", ticker)
                     continue
 
-                nws_high = await fetch_forecast_high(
-                    client,
-                    city_key,
-                    target_date,
-                )
+                cache_key = (city_key, target_date)
 
-                if nws_high is None:
-                    continue
+                if cache_key in forecast_cache:
+                    nws_high, openmeteo_high = forecast_cache[cache_key]
+                else:
+                    nws_high = await fetch_forecast_high(client, city_key, target_date)
+                    if nws_high is None:
+                        continue
 
-                openmeteo_high = await fetch_openmeteo_forecast_high(
-                    client,
-                    city_key,
-                    target_date,
-                )
+                    await asyncio.sleep(1)
 
-                if openmeteo_high is None:
-                    continue
+                    openmeteo_high = await fetch_openmeteo_forecast_high(client, city_key, target_date)
+                    if openmeteo_high is None:
+                        continue
+
+                    forecast_cache[cache_key] = (nws_high, openmeteo_high)
 
                 logger.info(
                     "%s forecasts for %s -> NWS: %.1f°F Open-Meteo: %.1f°F",
@@ -701,7 +701,7 @@ async def scan_once() -> None:
 
                     opportunities.append(opp)
                     
-                await asyncio.sleep(2)
+                await asyncio.sleep(8)
 
     logger.info("Found %s opportunities", len(opportunities))
     await send_discord_alert(opportunities)

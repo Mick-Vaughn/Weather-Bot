@@ -444,6 +444,8 @@ async def scan_once() -> None:
                 opp = evaluate_market(city_key, market, forecast_high, prices)
                 if opp:
                     opportunities.append(opp)
+                    
+            await asyncio.sleep(1.5)
 
     logger.info("Found %s opportunities", len(opportunities))
     await send_discord_alert(opportunities)

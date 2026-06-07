@@ -222,10 +222,6 @@ async def fetch_orderbook_prices(client: httpx.AsyncClient, ticker: str):
         yes_ask = 100 - no_bid if no_bid is not None else None
         no_ask = 100 - yes_bid if yes_bid is not None else None
 
-        logger.info(
-            f"ORDERBOOK {ticker}: yes_bid={yes_bid}, yes_ask={yes_ask}, no_bid={no_bid}, no_ask={no_ask}"
-        )
-
         return {
             "yes_bid": yes_bid,
             "yes_ask": yes_ask,
@@ -257,8 +253,7 @@ def evaluate_market(city_key: str, market: Dict, forecast_high: float, prices: D
 
     if distance > 8:
         return None
-    
-    logger.info(f"DEBUG BUCKET: {title} -> {bucket}")
+
 # Skip markets where the threshold is too far from the forecast
 #    if abs(threshold - forecast_high) > 8:
 #        return None

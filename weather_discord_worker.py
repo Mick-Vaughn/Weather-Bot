@@ -340,7 +340,16 @@ async def fetch_orderbook_prices(client: httpx.AsyncClient, ticker: str):
         logger.warning(f"ORDERBOOK FAILED {ticker}: {e}")
         return {}
 
-def evaluate_market(city_key: str, market: Dict, forecast_high: float, prices: Dict) -> Optional[Dict]:
+def evaluate_market(
+    city_key: str,
+    market: Dict,
+    forecast_high: float,
+    prices: Dict,
+    forecast_warning: bool,
+    spread: float,
+    nws_high: float,
+    openmeteo_high: float,
+) -> Optional[Dict]:
     title = market.get("title") or market.get("subtitle") or market.get("ticker", "")
     ticker = market.get("ticker", "")
 
@@ -576,7 +585,7 @@ async def scan_once() -> None:
                     continue
 
                 logger.info(
-                    "%s forecasts -> NWS: %.1f°F Open-Meteo: %.1f°F",
+                    "%s forecasts for %s -> NWS: %.1f°F Open-Meteo: %.1f°F",
                     city_key,
                     target_date.isoformat(),
                     nws_high,
@@ -595,6 +604,10 @@ async def scan_once() -> None:
                     market,
                     forecast_high,
                     prices,
+                    forecast_warning,
+                    spread,
+                    nws_high,
+                    openmeteo_high,
                 )
 
                 if opp:
@@ -604,11 +617,8 @@ async def scan_once() -> None:
                     opp["openmeteo_high"] = openmeteo_high
 
                     opportunities.append(opp)
-
-                if opp:
-                    opportunities.append(opp)
-
-            await asyncio.sleep(1.5)
+                    
+                await asyncio.sleep(1.5)
 
     logger.info("Found %s opportunities", len(opportunities))
     await send_discord_alert(opportunities)

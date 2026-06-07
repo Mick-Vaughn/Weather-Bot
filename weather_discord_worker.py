@@ -324,8 +324,8 @@ async def send_discord_alert(opportunities: List[Dict]) -> None:
             "name": f"#{i} {o['city']} — BUY {o['side']}",
             "value": (
                 f"**Edge:** {o['edge']:+.1%}\n"
-                f"**Entry:** {price:.1%}\n"
-                f"**Market YES:** {market_yes:.1%}\n"
+                f"**Entry:** {o['price']:.1%}\n"
+                f"**Market YES:** {o['market_yes']:.1%}\n"
                 f"**Model YES:** {o['model_yes']:.1%}\n"
                 f"**Forecast High:** {o['forecast_high']:.1f}°F\n"
                 f"**Threshold:** {o['threshold']}°F\n"

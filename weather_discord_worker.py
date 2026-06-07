@@ -19,7 +19,7 @@ DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL", "")
 WEATHER_CITIES = os.getenv("WEATHER_CITIES", "nyc")
 DISCORD_TOP_N = int(os.getenv("DISCORD_TOP_N", "5"))
 DISCORD_MIN_EDGE = float(os.getenv("DISCORD_MIN_EDGE", "0.00"))
-CHECK_INTERVAL_SECONDS = int(os.getenv("CHECK_INTERVAL_SECONDS", "900"))
+CHECK_INTERVAL_SECONDS = int(os.getenv("CHECK_INTERVAL_SECONDS", "300"))
 
 KALSHI_URL = "https://api.elections.kalshi.com/trade-api/v2/markets"
 
@@ -234,6 +234,10 @@ def evaluate_market(city_key: str, market: Dict, forecast_high: float) -> Option
     model_yes = max(0.01, min(0.99, model_yes))
     model_no = 1 - model_yes
 
+# ignore tiny differences between model and market
+    if abs(model_yes - yes_price) < DISCORD_MIN_EDGE:
+        return None
+    
     yes_edge = model_yes - yes_price
     no_edge = model_no - no_price
 

@@ -391,6 +391,7 @@ async def main() -> None:
         "side": "YES",
         "edge": 0.99,
         "price": 0.01,
+        "market_yes": 1.0,
         "model_yes": 1.0,
         "forecast_high": 0,
         "threshold": 0,

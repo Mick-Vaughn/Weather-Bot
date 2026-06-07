@@ -238,6 +238,7 @@ async def fetch_forecast_high(client: httpx.AsyncClient,city_key: str,target_dat
 async def fetch_openmeteo_forecast_high(
     client: httpx.AsyncClient,
     city_key: str,
+    target_date: date,
 ) -> Optional[float]:
 
     coords = CITY_COORDS.get(city_key)

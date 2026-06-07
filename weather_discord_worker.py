@@ -4,7 +4,7 @@ import time
 import math
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 from typing import Dict, List, Optional
 
 import httpx
@@ -162,46 +162,72 @@ async def fetch_kalshi_city_markets(client: httpx.AsyncClient, city_key: str) ->
         logger.warning("Kalshi request failed for %s (%s): %s", city_key, series, e)
         return []
 
+def parse_kalshi_date_from_ticker(ticker: str) -> Optional[date]:
+    """
+    Example ticker:
+    KXHIGHNY-26JUN07-T87
+    Means 2026-JUN-07.
+    """
+    match = re.search(r"-(\d{2})([A-Z]{3})(\d{2})-", ticker.upper())
+    if not match:
+        return None
 
-async def fetch_forecast_high(client: httpx.AsyncClient, city_key: str) -> Optional[float]:
+    yy, mon, dd = match.groups()
+
+    month_map = {
+        "JAN": 1, "FEB": 2, "MAR": 3, "APR": 4,
+        "MAY": 5, "JUN": 6, "JUL": 7, "AUG": 8,
+        "SEP": 9, "OCT": 10, "NOV": 11, "DEC": 12,
+    }
+
+    month = month_map.get(mon)
+    if month is None:
+        return None
+
+    return date(2000 + int(yy), month, int(dd))
+
+async def fetch_forecast_high(client: httpx.AsyncClient,city_key: str,target_date: date,) -> Optional[float]:
     coords = CITY_COORDS.get(city_key)
     if not coords:
         return None
 
     lat, lon = coords
-
-    headers = {
-        "User-Agent": "kalshi-weather-bot"
-    }
+    headers = {"User-Agent": "kalshi-weather-bot"}
 
     try:
-        # Step 1: Convert city coordinates to NWS gridpoint
         points_url = f"https://api.weather.gov/points/{lat},{lon}"
-
         r = await client.get(points_url, headers=headers)
         r.raise_for_status()
         point_data = r.json()
 
-        # Step 2: Use NWS daily forecast, not hourly forecast
         daily_url = point_data["properties"]["forecast"]
-
         r = await client.get(daily_url, headers=headers)
         r.raise_for_status()
         forecast_data = r.json()
 
         periods = forecast_data.get("properties", {}).get("periods", [])
 
-        day_periods = [
+        target_date_str = target_date.isoformat()
+
+        matching_periods = [
             p for p in periods
-            if p.get("isDaytime") is True and p.get("temperature") is not None
+            if p.get("isDaytime") is True
+            and p.get("temperature") is not None
+            and p.get("startTime", "").startswith(target_date_str)
         ]
 
-        if not day_periods:
+        if not matching_periods:
+            logger.warning("No NWS daytime forecast for %s on %s", city_key, target_date_str)
             return None
 
-        forecast_high = float(day_periods[0]["temperature"])
+        forecast_high = float(matching_periods[0]["temperature"])
 
-        logger.info("%s NWS daily forecast high: %.1f°F", city_key, forecast_high)
+        logger.info(
+            "%s NWS daily forecast high for %s: %.1f°F",
+            city_key,
+            target_date_str,
+            forecast_high,
+        )
 
         return forecast_high
 
@@ -429,22 +455,37 @@ async def scan_once() -> None:
         for city_key in cities:
             logger.info("Scanning %s", city_key)
 
-            forecast_high = await fetch_forecast_high(client, city_key)
-            if forecast_high is None:
-                continue
-
-            logger.info("%s forecast high: %.1f°F", city_key, forecast_high)
-
             markets = await fetch_kalshi_city_markets(client, city_key)
 
             for market in markets:
                 ticker = market.get("ticker", "")
+
+                target_date = parse_kalshi_date_from_ticker(ticker)
+                if target_date is None:
+                    logger.warning("Could not parse date from ticker %s", ticker)
+                    continue
+
+                forecast_high = await fetch_forecast_high(
+                    client,
+                    city_key,
+                    target_date,
+                )
+
+                if forecast_high is None:
+                    continue
+
                 prices = await fetch_orderbook_prices(client, ticker)
 
-                opp = evaluate_market(city_key, market, forecast_high, prices)
+                opp = evaluate_market(
+                    city_key,
+                    market,
+                    forecast_high,
+                    prices,
+                )
+
                 if opp:
                     opportunities.append(opp)
-                    
+
             await asyncio.sleep(1.5)
 
     logger.info("Found %s opportunities", len(opportunities))

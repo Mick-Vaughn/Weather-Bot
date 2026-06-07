@@ -472,6 +472,12 @@ async def send_discord_alert(opportunities: List[Dict]) -> None:
         logger.info("No opportunities to send")
         return
 
+    unique = {}
+    for o in opportunities:
+        unique[o["ticker"]] = o
+
+    opportunities = list(unique.values())
+    
     top = sorted(opportunities, key=lambda x: x["edge"], reverse=True)[:DISCORD_TOP_N]
 
     fields = []
@@ -488,8 +494,10 @@ async def send_discord_alert(opportunities: List[Dict]) -> None:
             )
             
         fields.append({
-            "name": f"#{i} {o['city']} — BUY {o['side']}",
+            alert_prefix = "⚠️ " if o.get("forecast_warning") else ""
+            "name": f"#{i} {alert_prefix}{o['city']} — BUY {o['side']}",
             "value": (
+                f"{o['title']}"
                 f"**Edge:** {o['edge']:+.1%}\n"
                 f"**Entry:** {o['price']:.1%}\n"
                 f"**Market YES:** {o['market_yes']:.1%}\n"
@@ -498,7 +506,6 @@ async def send_discord_alert(opportunities: List[Dict]) -> None:
                 f"{warning_text}"
                 f"**Threshold:** {o['threshold']}°F\n"
                 f"**Ticker:** `{o['ticker']}`\n"
-                f"{o['title']}"
             ),
             "inline": False,
         })

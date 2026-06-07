@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "python run.py",
+    "startCommand": "python weather_discord_worker.py",
     "healthcheckPath": "/api/health",
     "restartPolicyType": "ON_FAILURE"
   }

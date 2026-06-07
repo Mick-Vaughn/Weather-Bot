@@ -202,6 +202,16 @@ def evaluate_market(city_key: str, market: Dict, forecast_high: float) -> Option
     bucket = parse_temp_bucket(title)
     if bucket is None:
         return None
+        
+    if bucket["type"] == "below":
+        distance = abs(bucket["high"] - forecast_high)
+    elif bucket["type"] == "above":
+        distance = abs(bucket["low"] - forecast_high)
+    else:
+        distance = min(abs(bucket["low"] - forecast_high), abs(bucket["high"] - forecast_high))
+
+    if distance > 8:
+        return None
     
     logger.info(f"DEBUG BUCKET: {title} -> {bucket}")
 # Skip markets where the threshold is too far from the forecast

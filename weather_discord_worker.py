@@ -284,19 +284,62 @@ async def fetch_openmeteo_forecast_high(
         logger.warning("Open-Meteo request failed for %s on %s: %s", city_key, target_date, e)
         return None
 
+async def fetch_kalshi_forecast(
+    client: httpx.AsyncClient,
+    event_ticker: str,
+) -> Optional[float]:
+    try:
+        now = int(time.time())
+
+        r = await client.get(
+            f"https://api.elections.kalshi.com/v1/events/{event_ticker}/forecast_history",
+            params={
+                "start_ts": now - 3600,
+                "end_ts": now,
+                "period_interval": 1,
+            },
+        )
+
+        r.raise_for_status()
+        data = r.json()
+
+        points = data.get("forecast_history", []) or data.get("history", []) or data.get("data", [])
+
+        forecasts = [
+            p.get("raw_numerical_forecast")
+            for p in points
+            if p.get("raw_numerical_forecast") is not None
+        ]
+
+        if not forecasts:
+            return None
+
+        return float(forecasts[-1])
+
+    except Exception as e:
+        logger.warning("Kalshi forecast failed for %s: %s", event_ticker, e)
+        return None
+
 def get_consensus_forecast(
     nws_high: float,
     openmeteo_high: float,
-    max_spread: float = 3.0,
-) -> Optional[float]:
-
-    spread = abs(nws_high - openmeteo_high)
-
+    kalshi_forecast: Optional[float] = None,
+    max_source_spread: float = 3.0,
+    max_kalshi_gap: float = 3.0,
+):
     forecast_high = (nws_high + openmeteo_high) / 2
+    source_spread = abs(nws_high - openmeteo_high)
 
-    warning = spread > max_spread
+    forecast_warning = source_spread > max_source_spread
 
-    return forecast_high, warning, spread
+    kalshi_gap = None
+    kalshi_warning = False
+
+    if kalshi_forecast is not None:
+        kalshi_gap = abs(kalshi_forecast - forecast_high)
+        kalshi_warning = kalshi_gap > max_kalshi_gap
+
+    return forecast_high, forecast_warning, source_spread, kalshi_warning, kalshi_gap
 
 async def fetch_orderbook_prices(client: httpx.AsyncClient, ticker: str):
     url = f"{KALSHI_URL}/{ticker}/orderbook"
@@ -502,10 +545,26 @@ async def send_discord_alert(opportunities: List[Dict]) -> None:
                 f"Spread: {o['forecast_spread']:.1f}°F\n"
             )
             
-        alert_prefix = "⚠️ " if o.get("forecast_warning") else ""
+        alert_prefix = "⚠️ " if (
+            o.get("forecast_warning")
+            or o.get("kalshi_warning")
+        ) else ""
+
+        if o.get("kalshi_warning"):
+            warning_text += (
+                "\n⚠️ **KALSHI FORECAST GAP**\n"
+                f"Kalshi Forecast: {o['kalshi_forecast']:.1f}°F\n"
+                f"Bot Forecast: {o['forecast_high']:.1f}°F\n"
+                f"Gap: {o['kalshi_gap']:.1f}°F\n"
+            )
         
         title = f"{alert_prefix}{o['city']} — {o['title']}"
 
+        kalshi_text = ""
+
+        if o.get("kalshi_forecast") is not None:
+            kalshi_text = f"**Kalshi Forecast:** {o['kalshi_forecast']:.1f}°F\n"
+        
         fields.append({
             "name": title,
             "value": (
@@ -515,11 +574,14 @@ async def send_discord_alert(opportunities: List[Dict]) -> None:
                 f"**Model:** {o['model_yes']:.1%}\n"
                 f"**Market YES:** {o['market_yes']:.1%}\n"
                 f"**Forecast:** {o['forecast_high']:.1f}°F\n"
+                f"**NWS:** {o['nws_high']:.1f}°F\n"
+                f"**Open-Meteo:** {o['openmeteo_high']:.1f}°F\n"
+                f"{kalshi_text}"
                 f"{warning_text}"
-                f"**Ticker:** `{o['ticker']}`"
-    ),
-    "inline": False,
-})
+                f"**Ticker:** {o['ticker']}"
+            ),
+            "inline": False,
+        })
 
     payload = {
         "username": "Kalshi Weather Scanner",
@@ -587,9 +649,17 @@ async def scan_once() -> None:
                     openmeteo_high,
                 )
 
-                forecast_high, forecast_warning, spread = get_consensus_forecast(
+                event_ticker = "-".join(ticker.split("-")[:2])
+
+                kalshi_forecast = await fetch_kalshi_forecast(
+                    client,
+                    event_ticker,
+                )
+
+                forecast_high, forecast_warning, spread, kalshi_warning, kalshi_gap = get_consensus_forecast(
                     nws_high,
                     openmeteo_high,
+                    kalshi_forecast,
                 )
 
                 prices = await fetch_orderbook_prices(client, ticker)
@@ -610,6 +680,9 @@ async def scan_once() -> None:
                     opp["forecast_spread"] = spread
                     opp["nws_high"] = nws_high
                     opp["openmeteo_high"] = openmeteo_high
+                    opp["kalshi_forecast"] = kalshi_forecast
+                    opp["kalshi_warning"] = kalshi_warning
+                    opp["kalshi_gap"] = kalshi_gap
 
                     opportunities.append(opp)
                     

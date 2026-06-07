@@ -195,8 +195,8 @@ def evaluate_market(city_key: str, market: Dict, forecast_high: float) -> Option
 
 # Skip low-volume / dead markets
     volume = float(market.get("volume", 0) or 0)
-    if volume < 100:
-        return None
+  #  if volume < 100:
+  #      return None
 
     yes_ask = market.get("yes_ask")
     no_ask = market.get("no_ask")
@@ -209,8 +209,8 @@ def evaluate_market(city_key: str, market: Dict, forecast_high: float) -> Option
     yes_price = float(yes_ask) / 100
     no_price = float(no_ask) / 100
 
-    if yes_price <= 0.02 or yes_price >= 0.98:
-        return None
+   # if yes_price <= 0.02 or yes_price >= 0.98:
+   #     return None
 
     sigma = 3.0
 

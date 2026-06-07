@@ -130,7 +130,7 @@ def parse_temp_bucket(title: str):
     ):
         return {"type": "below", "low": None, "high": nums[0]}
 
-     if (
+    if (
         "above" in text
         or "or higher" in text
         or "over" in text

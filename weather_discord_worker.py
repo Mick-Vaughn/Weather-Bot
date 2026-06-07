@@ -235,6 +235,68 @@ async def fetch_forecast_high(client: httpx.AsyncClient,city_key: str,target_dat
         logger.warning("NWS daily forecast request failed for %s: %s", city_key, e)
         return None
 
+async def fetch_openmeteo_forecast_high(
+    client: httpx.AsyncClient,
+    city_key: str,
+) -> Optional[float]:
+
+    coords = CITY_COORDS.get(city_key)
+    if not coords:
+        return None
+
+    lat, lon = coords
+
+    try:
+        r = await client.get(
+            "https://api.open-meteo.com/v1/forecast",
+            params={
+                "latitude": lat,
+                "longitude": lon,
+                "daily": "temperature_2m_max",
+                "temperature_unit": "fahrenheit",
+                "timezone": "auto",
+                "start_date": target_date.isoformat(),
+                "end_date": target_date.isoformat(),
+            },
+        )
+
+        r.raise_for_status()
+        data = r.json()
+
+        highs = data.get("daily", {}).get("temperature_2m_max", [])
+
+        if not highs:
+            return None
+
+        forecast_high = float(highs[0])
+
+        logger.info(
+            "%s Open-Meteo forecast high for %s: %.1f°F",
+            city_key,
+            target_date.isoformat(),
+            forecast_high,
+        )
+
+        return forecast_high
+
+    except Exception as e:
+        logger.warning("Open-Meteo request failed for %s on %s: %s", city_key, target_date, e)
+        return None
+
+def get_consensus_forecast(
+    nws_high: float,
+    openmeteo_high: float,
+    max_spread: float = 3.0,
+) -> Optional[float]:
+
+    spread = abs(nws_high - openmeteo_high)
+
+    forecast_high = (nws_high + openmeteo_high) / 2
+
+    warning = spread > max_spread
+
+    return forecast_high, warning, spread
+
 async def fetch_orderbook_prices(client: httpx.AsyncClient, ticker: str):
     url = f"{KALSHI_URL}/{ticker}/orderbook"
 
@@ -413,6 +475,17 @@ async def send_discord_alert(opportunities: List[Dict]) -> None:
 
     fields = []
     for i, o in enumerate(top, 1):
+        
+        warning_text = ""
+
+        if o.get("forecast_warning"):
+            warning_text = (
+                "\n⚠️ **FORECAST DISAGREEMENT**\n"
+                f"NWS: {o['nws_high']:.1f}°F\n"
+                f"Open-Meteo: {o['openmeteo_high']:.1f}°F\n"
+                f"Spread: {o['forecast_spread']:.1f}°F\n"
+            )
+            
         fields.append({
             "name": f"#{i} {o['city']} — BUY {o['side']}",
             "value": (
@@ -421,6 +494,7 @@ async def send_discord_alert(opportunities: List[Dict]) -> None:
                 f"**Market YES:** {o['market_yes']:.1%}\n"
                 f"**Model YES:** {o['model_yes']:.1%}\n"
                 f"**Forecast High:** {o['forecast_high']:.1f}°F\n"
+                f"{warning_text}"
                 f"**Threshold:** {o['threshold']}°F\n"
                 f"**Ticker:** `{o['ticker']}`\n"
                 f"{o['title']}"
@@ -465,14 +539,36 @@ async def scan_once() -> None:
                     logger.warning("Could not parse date from ticker %s", ticker)
                     continue
 
-                forecast_high = await fetch_forecast_high(
+                nws_high = await fetch_forecast_high(
                     client,
                     city_key,
                     target_date,
                 )
 
-                if forecast_high is None:
+                if nws_high is None:
                     continue
+
+                openmeteo_high = await fetch_openmeteo_forecast_high(
+                    client,
+                    city_key,
+                    target_date,
+                )
+
+                if openmeteo_high is None:
+                    continue
+
+                logger.info(
+                    "%s forecasts -> NWS: %.1f°F Open-Meteo: %.1f°F",
+                    city_key,
+                    target_date.isoformat(),
+                    nws_high,
+                    openmeteo_high,
+                )
+
+                forecast_high, forecast_warning, spread = get_consensus_forecast(
+                    nws_high,
+                    openmeteo_high,
+                )
 
                 prices = await fetch_orderbook_prices(client, ticker)
 
@@ -482,6 +578,14 @@ async def scan_once() -> None:
                     forecast_high,
                     prices,
                 )
+
+                if opp:
+                    opp["forecast_warning"] = forecast_warning
+                    opp["forecast_spread"] = spread
+                    opp["nws_high"] = nws_high
+                    opp["openmeteo_high"] = openmeteo_high
+
+                    opportunities.append(opp)
 
                 if opp:
                     opportunities.append(opp)

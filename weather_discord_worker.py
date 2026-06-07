@@ -191,8 +191,49 @@ async def fetch_forecast_high(client: httpx.AsyncClient, city_key: str) -> Optio
         logger.warning("Forecast request failed for %s: %s", city_key, e)
         return None
 
+async def fetch_orderbook_prices(client: httpx.AsyncClient, ticker: str):
+    url = f"{KALSHI_URL}/{ticker}/orderbook"
 
-def evaluate_market(city_key: str, market: Dict, forecast_high: float) -> Optional[Dict]:
+    try:
+        r = await client.get(url, params={"depth": 1})
+        r.raise_for_status()
+        data = r.json()
+
+        ob = data.get("orderbook", {}) or data.get("orderbook_fp", {})
+
+        yes_levels = ob.get("yes") or ob.get("yes_dollars") or []
+        no_levels = ob.get("no") or ob.get("no_dollars") or []
+
+        yes_bid = None
+        no_bid = None
+
+        if yes_levels:
+            yes_bid = float(yes_levels[-1][0])
+
+        if no_levels:
+            no_bid = float(no_levels[-1][0])
+
+        # Convert dollar prices like 0.83 to cents if needed
+        if yes_bid is not None and yes_bid <= 1:
+            yes_bid *= 100
+        if no_bid is not None and no_bid <= 1:
+            no_bid *= 100
+
+        yes_ask = 100 - no_bid if no_bid is not None else None
+        no_ask = 100 - yes_bid if yes_bid is not None else None
+
+        return {
+            "yes_bid": yes_bid,
+            "yes_ask": yes_ask,
+            "no_bid": no_bid,
+            "no_ask": no_ask,
+        }
+
+    except Exception as e:
+        logger.warning("Orderbook request failed for %s: %s", ticker, e)
+        return {}
+
+def evaluate_market(city_key: str, market: Dict, forecast_high: float, prices: Dict) -> Optional[Dict]:
     title = market.get("title") or market.get("subtitle") or market.get("ticker", "")
     ticker = market.get("ticker", "")
 
@@ -223,22 +264,31 @@ def evaluate_market(city_key: str, market: Dict, forecast_high: float) -> Option
   #  if volume < 100:
   #      return None
 
-    yes_bid = market.get("yes_bid")
-    yes_ask = market.get("yes_ask")
-    no_bid = market.get("no_bid")
-    no_ask = market.get("no_ask")
-    last_price = market.get("last_price")
+    yes_bid = prices.get("yes_bid")
+    yes_ask = prices.get("yes_ask")
+    no_bid = prices.get("no_bid")
+    no_ask = prices.get("no_ask")
 
-    # Derive missing asks from opposite bids
+    if yes_ask is None:
+        yes_ask = market.get("yes_ask")
+
+    if no_ask is None:
+        no_ask = market.get("no_ask")
+
+    if yes_bid is None:
+        yes_bid = market.get("yes_bid")
+
+    if no_bid is None:
+        no_bid = market.get("no_bid")
+
     if yes_ask is None and no_bid is not None:
         yes_ask = 100 - float(no_bid)
 
     if no_ask is None and yes_bid is not None:
         no_ask = 100 - float(yes_bid)
 
-    # Final fallback
     if yes_ask is None:
-        yes_ask = last_price if last_price is not None else 50
+        return None
 
     if no_ask is None:
         no_ask = 100 - float(yes_ask)
@@ -246,9 +296,7 @@ def evaluate_market(city_key: str, market: Dict, forecast_high: float) -> Option
     yes_price = float(yes_ask) / 100
     no_price = float(no_ask) / 100
 
-    market_yes = float(
-        yes_bid if yes_bid is not None else yes_ask
-    ) / 100
+    market_yes = float(yes_ask) / 100
 
    # if yes_price <= 0.02 or yes_price >= 0.98:
    #     return None
@@ -371,7 +419,10 @@ async def scan_once() -> None:
             markets = await fetch_kalshi_city_markets(client, city_key)
 
             for market in markets:
-                opp = evaluate_market(city_key, market, forecast_high)
+                ticker = market.get("ticker", "")
+                prices = await fetch_orderbook_prices(client, ticker)
+
+                opp = evaluate_market(city_key, market, forecast_high, prices)
                 if opp:
                     opportunities.append(opp)
 

@@ -493,8 +493,9 @@ async def send_discord_alert(opportunities: List[Dict]) -> None:
                 f"Spread: {o['forecast_spread']:.1f}°F\n"
             )
             
+        alert_prefix = "⚠️ " if o.get("forecast_warning") else ""
+        
         fields.append({
-            alert_prefix = "⚠️ " if o.get("forecast_warning") else ""
             "name": f"#{i} {alert_prefix}{o['city']} — BUY {o['side']}",
             "value": (
                 f"{o['title']}"

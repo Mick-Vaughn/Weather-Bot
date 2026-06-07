@@ -111,6 +111,23 @@ def is_high_market(title: str) -> bool:
 def normal_cdf(x: float) -> float:
     return 0.5 * (1 + math.erf(x / math.sqrt(2)))
 
+def parse_temp_bucket(title: str):
+    text = title.lower()
+    nums = [int(x) for x in re.findall(r"\d{2,3}", text)]
+
+    if not nums:
+        return None
+
+    if "below" in text or "or less" in text or "under" in text:
+        return {"type": "below", "low": None, "high": nums[0]}
+
+    if "above" in text or "or higher" in text or "over" in text:
+        return {"type": "above", "low": nums[0], "high": None}
+
+    if len(nums) >= 2:
+        return {"type": "range", "low": nums[0], "high": nums[1]}
+
+    return {"type": "above", "low": nums[0], "high": None}
 
 async def fetch_kalshi_city_markets(client: httpx.AsyncClient, city_key: str) -> List[Dict]:
     series = CITY_SERIES.get(city_key)
@@ -168,13 +185,13 @@ def evaluate_market(city_key: str, market: Dict, forecast_high: float) -> Option
     if not is_high_market(title):
         return None
 
-    threshold = extract_threshold(title)
-    if threshold is None:
+    bucket = parse_temp_bucket(title)
+    if bucket is None:
         return None
 
 # Skip markets where the threshold is too far from the forecast
-    if abs(threshold - forecast_high) > 8:
-        return None
+#    if abs(threshold - forecast_high) > 8:
+#        return None
 
 # Skip low-volume / dead markets
     volume = float(market.get("volume", 0) or 0)
@@ -196,7 +213,24 @@ def evaluate_market(city_key: str, market: Dict, forecast_high: float) -> Option
         return None
 
     sigma = 3.0
-    model_yes = normal_cdf((forecast_high - threshold) / sigma)
+
+    def cdf(temp):
+        return normal_cdf((temp - forecast_high) / sigma)
+
+    if bucket["type"] == "below":
+        model_yes = cdf(bucket["high"])
+        threshold_display = f"{bucket['high']}°F or below"
+
+    elif bucket["type"] == "above":
+        model_yes = 1 - cdf(bucket["low"])
+        threshold_display = f"{bucket['low']}°F or above"
+
+    else:
+        low = bucket["low"]
+        high = bucket["high"]
+        model_yes = cdf(high) - cdf(low)
+        threshold_display = f"{low}–{high}°F"
+
     model_yes = max(0.01, min(0.99, model_yes))
     model_no = 1 - model_yes
 
@@ -223,7 +257,7 @@ def evaluate_market(city_key: str, market: Dict, forecast_high: float) -> Option
         "price": price,
         "model_yes": model_yes,
         "forecast_high": forecast_high,
-        "threshold": threshold,
+        "threshold": threshold_display,
     }
 
 

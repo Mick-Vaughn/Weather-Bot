@@ -508,25 +508,18 @@ async def send_discord_alert(opportunities: List[Dict]) -> None:
 
         fields.append({
             "name": title,
-            "value": "",
-            "inline": False,
-        })
-
-        fields.extend([
-            {"name": "Side", "value": o["side"], "inline": True},
-            {"name": "EV%", "value": f"{o['edge']:+.1%}", "inline": True},
-            {"name": "Entry", "value": f"{o['price']:.1%}", "inline": True},
-
-            {"name": "Model prob", "value": f"{o['model_yes']:.1%}", "inline": True},
-            {"name": "Kalshi Implied", "value": f"{o['market_yes']:.1%}", "inline": True},
-            {"name": "Forecast High", "value": f"{o['forecast_high']:.1f}°F", "inline": True},
-
-            {"name": "NWS", "value": f"{o.get('nws_high', 0):.1f}°F", "inline": True},
-            {"name": "Open-Meteo", "value": f"{o.get('openmeteo_high', 0):.1f}°F", "inline": True},
-            {"name": "Spread", "value": f"{o.get('forecast_spread', 0):.1f}°F", "inline": True},
-
-            {"name": "Ticker", "value": f"`{o['ticker']}`", "inline": False},
-        ])
+            "value": (
+                f"**Side:** {o['side']}\n"
+                f"**EV:** {o['edge']:+.1%}\n"
+                f"**Entry:** {o['price']:.1%}\n"
+                f"**Model:** {o['model_yes']:.1%}\n"
+                f"**Market YES:** {o['market_yes']:.1%}\n"
+                f"**Forecast:** {o['forecast_high']:.1f}°F\n"
+                f"{warning_text}"
+                f"**Ticker:** `{o['ticker']}`"
+    ),
+    "inline": False,
+})
 
     payload = {
         "username": "Kalshi Weather Scanner",
@@ -620,7 +613,7 @@ async def scan_once() -> None:
 
                     opportunities.append(opp)
                     
-                await asyncio.sleep(3)
+                await asyncio.sleep(2)
 
     logger.info("Found %s opportunities", len(opportunities))
     await send_discord_alert(opportunities)

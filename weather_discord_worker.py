@@ -223,16 +223,32 @@ def evaluate_market(city_key: str, market: Dict, forecast_high: float) -> Option
   #  if volume < 100:
   #      return None
 
+    yes_bid = market.get("yes_bid")
     yes_ask = market.get("yes_ask")
+    no_bid = market.get("no_bid")
     no_ask = market.get("no_ask")
+    last_price = market.get("last_price")
 
+    # Derive missing asks from opposite bids
+    if yes_ask is None and no_bid is not None:
+        yes_ask = 100 - float(no_bid)
+
+    if no_ask is None and yes_bid is not None:
+        no_ask = 100 - float(yes_bid)
+
+    # Final fallback
     if yes_ask is None:
-        yes_ask = market.get("last_price", 50)
+        yes_ask = last_price if last_price is not None else 50
+
     if no_ask is None:
-        no_ask = 100 - yes_ask
+        no_ask = 100 - float(yes_ask)
 
     yes_price = float(yes_ask) / 100
     no_price = float(no_ask) / 100
+
+    market_yes = float(
+        yes_bid if yes_bid is not None else yes_ask
+    ) / 100
 
    # if yes_price <= 0.02 or yes_price >= 0.98:
    #     return None
@@ -284,6 +300,7 @@ def evaluate_market(city_key: str, market: Dict, forecast_high: float) -> Option
         "side": side,
         "edge": edge,
         "price": price,
+        "market_yes": market_yes,
         "model_yes": model_yes,
         "forecast_high": forecast_high,
         "threshold": threshold_display,

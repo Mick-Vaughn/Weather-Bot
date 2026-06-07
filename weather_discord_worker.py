@@ -325,18 +325,19 @@ def evaluate_market(city_key: str, market: Dict, forecast_high: float, prices: D
         return normal_cdf((temp - forecast_high) / sigma)
 
     if bucket["type"] == "below":
-        model_yes = cdf(bucket["high"])
-        threshold_display = f"{bucket['high']}°F or below"
+        display_high = bucket["high"] - 1
+        model_yes = cdf(bucket["high"] - 0.5)
+        threshold_display = f"{display_high:.0f}°F or below"
 
     elif bucket["type"] == "above":
-        model_yes = 1 - cdf(bucket["low"])
-        threshold_display = f"{bucket['low']}°F or above"
+        model_yes = 1 - cdf(bucket["low"] - 0.5)
+        threshold_display = f"{bucket['low']:.0f}°F or above"
 
     else:
         low = bucket["low"]
         high = bucket["high"]
-        model_yes = cdf(high) - cdf(low)
-        threshold_display = f"{low}–{high}°F"
+        model_yes = cdf(high + 0.5) - cdf(low - 0.5)
+        threshold_display = f"{low:.0f}–{high:.0f}°F"
 
     model_yes = max(0.01, min(0.99, model_yes))
     model_no = 1 - model_yes

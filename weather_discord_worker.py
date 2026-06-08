@@ -328,13 +328,13 @@ async def fetch_kalshi_forecast(
         return float(forecasts[-1])
 
     except httpx.HTTPStatusError as e:
-    logger.warning(
-        "Kalshi forecast failed for series=%s event=%s status=%s body=%s",
-        series_ticker,
-        event_ticker,
-        e.response.status_code,
-        e.response.text[:500],
-    )
+        logger.warning(
+            "Kalshi forecast failed for series=%s event=%s status=%s body=%s",
+            series_ticker,
+            event_ticker,
+            e.response.status_code,
+            e.response.text[:500],
+        )
         return None
 
     except Exception as e:

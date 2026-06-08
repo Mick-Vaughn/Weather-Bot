@@ -291,6 +291,11 @@ async def fetch_kalshi_forecast(
 ) -> Optional[float]:
     try:
         now = int(time.time())
+        
+        logger.info("Kalshi forecast lookup: series=%s event=%s",
+            series_ticker,
+            event_ticker,
+        )
 
         r = await client.get(
             f"https://api.elections.kalshi.com/v1/series/{series_ticker}/events/{event_ticker}/forecast_history",
@@ -322,8 +327,23 @@ async def fetch_kalshi_forecast(
 
         return float(forecasts[-1])
 
+    except httpx.HTTPStatusError as e:
+    logger.warning(
+        "Kalshi forecast failed for series=%s event=%s status=%s body=%s",
+        series_ticker,
+        event_ticker,
+        e.response.status_code,
+        e.response.text[:500],
+    )
+        return None
+
     except Exception as e:
-        logger.warning("Kalshi forecast failed for %s: %s", event_ticker, e)
+        logger.warning(
+            "Kalshi forecast failed for series=%s event=%s: %s",
+            series_ticker,
+            event_ticker,
+            e,
+        )
         return None
 
 def get_consensus_forecast(

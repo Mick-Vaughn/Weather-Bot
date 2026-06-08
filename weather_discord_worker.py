@@ -622,6 +622,7 @@ async def scan_once() -> None:
 
     opportunities = []
     forecast_cache = {}
+    kalshi_forecast_cache = {}
 
     timeout = httpx.Timeout(10.0, connect=5.0)
 
@@ -666,10 +667,14 @@ async def scan_once() -> None:
 
                 event_ticker = "-".join(ticker.split("-")[:2])
 
-                kalshi_forecast = await fetch_kalshi_forecast(
-                    client,
-                    event_ticker,
-                )
+                if event_ticker in kalshi_forecast_cache:
+                    kalshi_forecast = kalshi_forecast_cache[event_ticker]
+                else:
+                    kalshi_forecast = await fetch_kalshi_forecast(
+                        client,
+                        event_ticker,
+                    )
+                    kalshi_forecast_cache[event_ticker] = kalshi_forecast
 
                 forecast_high, forecast_warning, spread, kalshi_warning, kalshi_gap = get_consensus_forecast(
                     nws_high,

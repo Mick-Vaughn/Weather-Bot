@@ -286,10 +286,10 @@ async def fetch_openmeteo_forecast_high(
 
 async def fetch_kalshi_forecast(
     client: httpx.AsyncClient,
+    series_ticker: str,
     event_ticker: str,
 ) -> Optional[float]:
     try:
-        series_ticker = event_ticker.split("-")[0]
         now = int(time.time())
 
         r = await client.get(
@@ -664,18 +664,22 @@ async def scan_once() -> None:
                     nws_high,
                     openmeteo_high,
                 )
+                
+                event_ticker = market.get("event_ticker") or "-".join(ticker.split("-")[:2])
+                series_ticker = market.get("series_ticker") or event_ticker.split("-")[0]
 
-                event_ticker = "-".join(ticker.split("-")[:2])
+                kalshi_cache_key = (series_ticker, event_ticker)
 
-                if event_ticker in kalshi_forecast_cache:
-                    kalshi_forecast = kalshi_forecast_cache[event_ticker]
+                if kalshi_cache_key in kalshi_forecast_cache:
+                    kalshi_forecast = kalshi_forecast_cache[kalshi_cache_key]
                 else:
                     kalshi_forecast = await fetch_kalshi_forecast(
                         client,
+                        series_ticker,
                         event_ticker,
                     )
-                    kalshi_forecast_cache[event_ticker] = kalshi_forecast
-
+                    kalshi_forecast_cache[kalshi_cache_key] = kalshi_forecast
+                    
                 forecast_high, forecast_warning, spread, kalshi_warning, kalshi_gap = get_consensus_forecast(
                     nws_high,
                     openmeteo_high,
